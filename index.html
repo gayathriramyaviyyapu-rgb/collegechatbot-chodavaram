@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>College Chatbot with History</title>
+  <style>
+
+  #welcomeScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  color: #222;
+  font-size: 36px;
+  font-weight: 800;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 1px 1px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  animation: fadeOut 1s ease forwards;
+  animation-delay: 2s;
+ }
+
+  @keyframes fadeOut {
+    to {
+    opacity: 0;
+    visibility: hidden;
+   }
+  }
+
+  * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: url('college.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      }
+
+     .layout {
+      display: flex;
+      height: 100vh;
+      }
+
+    .history-panel {
+      width: 0;
+      overflow-x: hidden;
+      transition: 0.3s;
+      background: #ffffff;
+      border-right: 1px solid #ccc;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    .history-panel.open {
+      width: 250px;
+    }
+
+    .history-panel h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .history-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .delete-all-btn {
+      background-color:#d11a2a;
+      color:white;
+      border:none;
+      padding:6px 12px;
+      font-weight:bold;
+      border-radius:4px;
+      cursor:pointer;
+    }
+
+     .delete-all-btn:hover {
+       background-color:#a10f1a;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    .history-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .history-item span {
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #d11a2a;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+   .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      background-color: #0078d7;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-header button {
+      background-color: #0078d7;
+      border: none;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: background-color 0.3s ease;
+     }
+
+    .chat-header button:hover {
+     background-color: #005fa3;
+    }
+
+    .chat-header .clear-btn {
+      background-color: #e81123;
+    }
+
+    .chat-header .clear-btn:hover {
+      background-color: #c50f1f;
+    }
+
+    .chat-box {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 80%;
+    }
+
+    .user-message {
+      background-color: #0078d7;
+      color: white;
+      align-self: flex-end;
+    }
+
+    .bot-message {
+      background-color: #e0e0e0;
+      color: #333;
+      align-self: flex-start;
+      white-space: pre-line;
+    }
+
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      font-size: 16px;
+    }
+
+    .chat-input button {
+      padding: 15px;
+      background-color: #0078d7;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover {
+      background-color: #005fa3;
+    }
+
+    .typing {
+     display:inline-flex;
+     align-items: center;
+     gap:4px;
+    }
+
+    .typing .dot {
+      height:8px;
+      width:8px;
+      background-color:#555;
+      border-radius:50%;
+      display:inline-block;
+      animation:bounce 1.2s infinite;
+     }
+
+     .typing .dot:nth-child(2) {
+       animation-delay:0.2s;
+     }
+
+     .typing .dot:nth-child(3) {
+       animation-delay:0.4s;
+     }
+
+     @keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+     }
+
+     #chatBox {
+     scroll-behavior:smooth;
+     } 
+
+     body.dark-mode {
+     filter: grayscale(100%) contrast(1.1); /* B&W effect */
+     background-color: #000 !important;
+     }
+
+/* Ensure background college.jpg shows in B&W */
+     body.dark-mode::before {
+     content: "";
+     position: fixed;
+     top: 0; left: 0; right: 0; bottom: 0;
+     background-image: url('college.jpg');
+     background-size: cover;
+     background-repeat: no-repeat;
+     background-position: center;
+     filter: grayscale(100%) contrast(1.2);
+     z-index: -1;
+     }
+
+/* Apply B&W effect to everything */
+     body.dark-mode * {
+     background-color: transparent !important;
+     color: white !important;
+     border-color: white !important;
+     box-shadow: none !important;
+     }
+
+/* Buttons should still stand out */
+     body.dark-mode button {
+     background-color: #111 !important;
+     color: white !important;
+     border: 1px solid white !important;
+     box-shadow: 0 0 5px white !important;
+     font-weight: bold;
+     }
+
+/* History Panel */
+     body.dark-mode .history-panel {
+     background-color: rgba(0, 0, 0, 0.5) !important;
+     border-color: white !important;
+     }
+
+
+/* Message bubbles */
+     body.dark-mode .user-message,
+     body.dark-mode .bot-message {
+     background-color: rgba(255, 255, 255, 0.1) !important;
+     color: white !important;
+     border: 1px solid white !important;
+     }
+
+
+/* Modal (delete confirmation) */
+     body.dark-mode #confirmModal div {
+     background-color: #111 !important;
+     color: white !important;
+     border: 1px solid white !important;
+     box-shadow: 0 0 10px white !important;
+     }
+
+/* Welcome screen also in B&W */
+     body.dark-mode #welcomeScreen {
+     background: black !important;
+     color: white !important;
+     text-shadow: 0 0 5px white !important;
+     }
+
+/* Dark Mode: Input and Placeholder */
+     body.dark-mode input::placeholder {
+     color: white !important;
+     opacity: 0.7;
+     }
+
+     body.dark-mode .chat-input input {
+     background-color: black !important;
+     color: white !important;
+     }
+
+/* Optional: Make Send button match */
+     body.dark-mode .chat-input button {
+     background-color: black !important;
+     color: white !important;
+     border: 1px solid white !important;
+     }
+
+/* Dark mode top bar: College Assistant */
+     body.dark-mode .chat-header {
+     background-color: black !important;
+     color: white !important;
+     border-bottom: 1px solid white;
+     }
+
+/* Dark mode bot message */
+     body.dark-mode .bot-message {
+     background-color: black !important;
+     color: white !important;
+     border: 1px solid white !important;
+     }
+ 
+/* Dark mode user message */
+     body.dark-mode .user-message {
+     background-color: black !important;
+     color: white !important;
+     border: 1px solid white !important;
+     }
+
+/* Dark mode typing dots */    
+     body.dark-mode .typing .dot {
+     background-color: #f4f4f4 !important;
+    }
+  </style>
+ </head>
+<body>
+
+<div id="welcomeScreen"> Welcome to College Chatbot 🎓
+   </div>
+
+  <div id="mainLayout" class="layout">
+    <div class="history-panel" id="historyPanel">
+	<div class="history-header">
+          <h3>Chat History</h3>
+      <button id="deleteAllBtn" class="delete-all-btn">DEL</button>
+        </div>
+     <div id="historyList"></div>
+    </div>
+
+    <div class="chat-container">
+      <div class="chat-header">
+        🎓 College Assistant
+        <div class="header-buttons">
+          <button onclick="toggleHistory()">📜 History</button>
+          <button class="clear-btn" onclick="clearChat()">🗑 Clear</button>
+	  <button id="toggleVoice">🔊Voice On</button>
+          <button id="toggleTheme">🌙Dark Mode</button>
+   </div> 
+      </div>
+      <div class="chat-box" id="chatBox">
+        <div class="bot-message message">
+          Hi! I'm your college assistant. Ask me anything about admissions, courses, or campus life.
+        </div>
+      </div>
+      <div class="chat-input">
+      <input type="text" id="userInput" placeholder="Type your question..." />
+      <button id="sendBtn">Send</button>                                       
+      </div>
+    </div>
+  </div>
+   <div id="confirmModal" style="display:none; position:fixed; top:0; left:0;     width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:999;">
+   <div style="background:#fff; padding:20px; border-radius:8px; width:300px;   margin:100px auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.2);">
+   <p>Are you sure you want to delete all chat history?</p>
+   <button id="confirmYes" style="background-color:#d11a2a; color:white; b  border:none; padding:8px 12px; margin-right:10px; border-radius:4px;  cursor:pointer;">Yes</button>
+   <button id="confirmNo" style="background-color:#ccc; border:none; padding:8px  12px; border-radius:4px; cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
+ <script>
+
+window.onerror = function (message, source, lineno, colno, error) {
+  alert("JavaScript error: " + message + "\nCheck the console for more info.");
+};
+    const chatBox = document.getElementById("chatBox");
+    const historyPanel =document.getElementById("historyPanel");
+    const historyList = document.getElementById("historyList");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+   document.addEventListener("DOMContentLoaded", () => {
+    sendBtn.addEventListener("click", () => {
+     console.log("Send button clicked");
+     sendMessage();
+    });
+
+    userInput.addEventListener("keydown", (event) => {
+     if (event.key === "Enter" && !event.shiftKey) {
+     event.preventDefault();
+     sendMessage();
+     }
+   });
+  });
+
+    let lastBotText = "";
+    let currentSession = [];
+    let voiceEnabled = true;
+    let currentLineIndex = 0;
+    let lastLines = [];
+  
+    window.addEventListener("load", () => {
+     const welcome = document.getElementById("welcomeScreen");
+     const layout = document.getElementById("mainLayout");
+
+        setTimeout(() => {
+    welcome.style.display = "none";  // Hide welcome screen
+    layout.style.display = "flex";   // Show chatbot layout
+    }, 2000); // 2 seconds delay
+  });
+
+        function toggleHistory() {
+      historyPanel.classList.toggle("open");
+      loadHistoryList();
+    }
+
+      function sendMessage() {
+        const userText = userInput.value.trim();
+        if (userText === "") return;
+
+        addMessage("user",userText);
+
+      //✅Create typing animation inside bot bubble
+ 	const typingMsg=document.createElement("div");
+	typingMsg.className="message bot-message";
+ 	typingMsg.innerHTML=`
+          <div class="typing">
+	  <span class="dot"></span>
+	  <span class="dot"></span>
+	  <span class="dot"></span>
+	</div>`;
+
+      chatBox.appendChild(typingMsg);
+      scrollToBottom();
+
+    //Replace dots with reply after delay
+       setTimeout(()=> {
+	const botText=getBotResponse(userText);
+	typingMsg.innerHTML=botText;
+        speakText(botText);
+
+      currentSession.push({ sender: "user", text: userText, time: new Date() });
+      currentSession.push({ sender: "bot", text: botText, time: new Date() });
+
+      saveCurrentSession();
+    }, 1000);
+
+      userInput.value = "";
+    }
+
+      function addMessage(sender, text) {
+      const msg = document.createElement("div");
+      msg.className =`message ${sender}-message`;
+
+     const msgText=document.createElement("div");
+     msgText.textContent=text;
+
+     const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+    const msgTime=document.createElement("small");
+     msgTime.style.fontSize="12px";
+     msgTime.style.opacity="0.6";
+     msgTime.style.display="block";
+     msgTime.style.textAlign="right";
+     msgTime.textContent=time;
+
+     msg.appendChild(msgText);
+     msg.appendChild(msgTime);
+     chatBox.appendChild(msg);
+     scrollToBottom();
+    }
+
+     function getBotResponse(input) {
+         input=input.toLowerCase();
+       const responses = [	
+	{
+	  keywords: ["hello", "hlo"],
+	  reply: "Hello! I'm your college chatbot. What information would you like to know?"
+	},	
+	{
+	  keywords: ["morning", "mrng", "gm", "mng"],
+	  reply: "Good morning! How can I assist you today?"
+	},
+	{
+	  keywords: ["night", "ni8", "nyt", "n8", "nyte", "gn"],
+	  reply: "Good night! Hope you had a wonderful day."
+	},
+	{
+          keywords: ["admission", "admissions", "apply", "admission process"],
+          reply: `Admissions are open from June to August. You can apply online through our portal. :
+      Apply for AP POLYCET
+      Attend the entrance exam
+      Check result and rank
+      Attend web counselling
+      Get seat allotment
+      Report to college with documents.`
+        },
+        {
+          keywords: ["course", "courses", "branch", "branches"],
+          reply: `We offer two courses : 
+      CME : Computer Engineering 
+      ECE : Electronics and Communication Engineering
+          Which one are you interested CME or ECE?`
+        },
+	{
+  	  keywords: ["cme staff", "staff cme", "cme faculty", "faculty cme", "cme lecturers", "lecturers cme"],
+          reply: `Great choice...,we have experienced lecturers for CME branch.
+CME staff :
+     G. Govindha Naidu [M. Tech]
+     A. Chandra Kala [M. Tech]
+     P. Shiva [M. Tech] 
+     M. Saleha [M. CA]
+     D. Venkata Ramana [B. E]
+They bring both academic depth and industry experience to guide your journey!`
+	},
+	{
+	  keywords: ["cme branch", "cme info", "computer engineering", "why cme", "cme course", "about cme", "cme"],
+          reply: `Welcome to CME (Computer Engineering)!
+        If you dream about creating software, working with AI, and changing the world with code, CME is for you!
+   💡 Why choose CME?
+• Learn modern tech: AI, ML, Data Science, Web & App Dev  
+• Hands-on labs with real-world projects  
+• 85%+ placements in top companies  
+• Career paths in Google, Wipro, Infosys, and more
+✨ Be a part of the AI revolution. Choose CME. Code your future.`       
+	},
+	{
+  	  keywords: ["ece staff", "staff ece", "ece faculty", "faculty ece", "ece lecturers", "lecturers ece"],
+  	  reply: `Great choice...,we have experienced lecturers for ECE branch.
+     ECE staff :
+1. D. Venkata Ramana [B. E] 
+2. D. Dantheswari [M. E]  
+3. I. Sunil Kumar [M. Tech]  
+4. A. Chandra Kala [M. Tech]
+They bring both academic depth and industry experience to guide your journey!`
+	},
+	{
+  	  keywords: ["ece branch", "ece info", "electronics and communication", "why ece", "about ece", "ece"],
+  	reply: `welcome to ECE (Electronics & Communication Engineering)!
+       ECE is not just a branch – it's a journey of discovery. Every project, every circuit, every line of code makes you smarter and closer to your dreams!
+    💡 Why choose ECE?
+• Learn Electronics, VLSI, PCB Design, and IoT  
+• Lab-driven learning with cutting-edge equipment  
+• Placement success in core & software companies  
+• Future in Robotics, Embedded Systems, Telecom, and more
+✨ Build the devices of tomorrow. Choose ECE. Connect to the future!`
+ 	},
+        {
+	  keywords: ["general staff", "general lecturers", "general faculty", "faculty general", "staff general", "lecturers general"],
+	  reply: `GENERAL staff : 
+     K. Manasa [M. SC] 
+     B. Mahesh [B. Sc]
+     D. Venkata Ramana [M. A,B. ED]
+     G. Sanyasi Naidu [M. SC,B. ED]
+     K. Padmanabha Reddy [M. SC,M. ED]`
+	},
+	{
+	  keywords: ["principal", "head of college", "college head", "college principal"],
+	  reply: "G. Govindha Naidu [M. Tech]"
+	},
+	{
+	  keywords: ["head of cme department", "cme hod", "cme department head", "hod cme"],
+	  reply: "P.shiva [M. Tech]"
+	},
+	{
+          keywords: ["head of ece department", "ece hod", "ece department head", "hod ece"],
+	  reply: "D.Dantheswari [M. E]"
+	},
+	{ 
+	  keywords: ["timings", "timing", "time", "starts", "ends", "end time", "start time"],
+	  reply: "Our college starts at 9:30am and closed at 4:00pm."
+	},
+	{
+ 	  keywords: ["buses", "bus", "travelling"],
+	  reply: `College does not provide a bus. 
+But the availability of RTC buses are : 
+      Scindia to Chodavaram
+      Vizag to Chodavaram 
+      Narsipatnam to Chodavaram  
+      Madugula to Chodavaram
+      Paderu to Chodavaram
+      Manchaala to Chodavaram 
+      Konaam to Chodavaram
+      Cheedikaada to Chodavaram 
+      Anakapalli to Chodavaram
+ The people in above mentioned places have a choice to travel , remaining people must be choose a hostel or room.`
+        },
+        {
+	  keywords: ["celebration", "event", "occasion", "cultural activities", "cultural programs", "cultural events"],
+	  reply: "No events available at the moment. Please check back later!"
+	},
+        {
+          keywords: ["hostel", "accommodation", "stay"],
+          reply: `No,college does not provide hostels for boys and girls.
+   If it is neccessary to join hostel...
+   I will give you the further hostel details. 
+   If Girls hostel then contact this number : 8008735861. 
+   If Boys hostel then contact this number : 9959615175.`
+        },
+        {
+          keywords: ["fee", "fees", "payment", "cost"],
+          reply: `Fee structure varies by course :
+     1st year fee : 4700 
+     2nd year fee : 4150 
+     3rd year fee : 4150 
+If you want in detail information then visit the Fees section on our website.`
+        },
+	{
+	  keywords: ["attendance", "attendance rule", "condonation"],
+	  reply:`
+Have at least 75% attendance in all subjects (some colleges allow condonation up to 65%).
+⚠️ If attendance is between 65–75%, you may need to apply for condonation with valid reason.`
+	},
+ 	{
+	  keywords: ["exam eligibility", "exam", "eligibility", "semester eligibility", "diploma eligibility", "promotion rules", "exam promotion", "backlog", "supplementary"],
+          reply:`
+    Have at least 75% attendance in all subjects (some colleges allow condonation up to 65%).
+⚠️ If attendance is between 65–75%, you may need to apply for condonation with valid reason.
+    Clear any outstanding fees or dues.
+    Submit all assignments, lab records, and internal assessments.
+    You are eligible for the next semester even if you fail in some subjects, but you must not have backlogs exceeding the allowed limit (usually all first-year subjects before entering the third year must be cleared).`
+	},
+        {
+          keywords: ["canteen", "food", "mess"],
+          reply: "college does not provide a canteen."
+        },
+        {
+          keywords: ["library", "book", "reading"],
+          reply: "Our library is open from 9 AM to 6 PM on weekdays and offers a wide range of academic resources."
+        },
+ 	{
+	  keywords: ["facilities", "facility", "requirements", "features", "provisions"],
+	  reply: `college provides facilities like :
+      Drinking water 
+      Labs and Lab equipment 
+      Seminar hall 
+      Playground 
+      Washrooms
+      Library`
+	},
+	{
+          keywords: ["faculty", "faculties", "staff", "lecturers", "teachers"],  
+          reply: `Principal : G. Govinda Naidu [M. Tech]
+CME staff :
+       A. Chandra Kala [M. Tech]
+       P. Shiva [M. Tech] 
+       M. Saleha [MCA]
+ECE staff :
+       D. Venkata Ramana [B. E]
+       D. Dantheswari [M. E]
+       I. Sunil Kumar [M. Tech]
+GENERAL staff : 
+       K. Manasa [M. SC] 
+       B. Mahesh [B. SC]
+       M. Venkata Ramana [M. A,B. ED]
+       G. Sanyasi Naidu [M. SC,B. ED]
+       K. Padmanabha Reddy [M. SC,M. ED]`
+	},
+ 	{
+	  keywords: ["percentage", "pass"],
+	  reply: "Our college has achieved nearly 90% pass rate." 
+        },
+        {
+          keywords: ["placement", "campus", "job", "career"],
+          reply: `Our college provides high-quality technical education to produce skilled engineers and technicians ready for industry.
+        8+ years of excellence 
+        300+ students enrolled 
+        85% of placement rate 
+We have a dedicated placement cell that connects students with top companies during final year .
+Our college cracked placements :
+      Texas Instruments 
+      Thought Works 
+      Wipro 
+      Alocvex 
+      Technics 
+      Medha`
+        },
+        {
+          keywords: ["labs", "practical", "equipment"],
+	  reply: "Our college labs are equipped with modern tools for hands-on learning in both CME and ECE departments."
+        },
+	{
+	  keywords: ["location", "address", "route"],
+	  reply: "GandhiNagar,Chodavaram Mandal,Anakapalli District."
+	},
+	{
+	  keywords: ["about college", "college establish", "college", 
+"establish"],
+	  reply: `Established in 2017, our college is dedicated to academic excellence, innovation, and holistic development.
+We offer a dynamic learning environment where students can explore their full potential.
+Our college is a ragging-free campus, ensuring a safe and friendly environment for all students.`
+	},
+	{
+	  keywords: ["packages", "diploma-set", "academic-package"],
+	  reply: `Last year CME and ECE packages Details : 
+    Highest package : 9.02 LPA 
+    Average package : 2.49 LPA 
+        2025 package rate :
+     BEESETTY SRAVANI PRIYA
+         22635-EC-007
+         ECE Branch (2025 Batch)
+         Texas instruments (Product Developer)
+         9.02 LPA
+
+     PETCHETTI JAYANTH
+         22635-CM-032
+         CME Branch (2025 Batch)
+         THOUGHTWORKS TECHNOLOGY INDIA PVT LTD (INTERN TRAINEE)
+         8 LPA `
+        }
+      ];
+
+  // 1️⃣ First check for exact full keyword match
+     for (let item of responses) {
+        for (let keyword of item.keywords) {
+           if (input === keyword) {
+              return item.reply;
+           }
+        }
+     }
+
+   //  2️⃣ Then check for partial (contains) matches
+     for (let item of responses) {
+        if (item.keywords.some(keyword => input.includes(keyword))) {
+           return item.reply;
+        }
+     }
+
+     return "I'm not sure about that. Please contact the college office for more information.";
+    }
+
+    document.getElementById("toggleVoice").addEventListener("click", () => {
+    voiceEnabled = !voiceEnabled;
+
+   document.getElementById("toggleVoice").textContent = voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off";
+
+   if (!voiceEnabled) {
+    window.speechSynthesis.cancel(); // ❗ Stop current speech immediately  
+    isSpeaking = false; // Reset speaking state
+   } else if (lastBotText && currentLineIndex < lastLines.length) {
+   // Don't reset currentLineIndex — resume from where it stopped
+   speakNextInQueue();
+   }
+ });
+
+    let speakingQueue = [];
+    let isSpeaking=false;
+  
+    function speakText(text) {
+      lastBotText = text; // ✅ Store latest text even if voice is off
+      lastLines = text.split('\n').filter(line => line.trim() !== "");
+      currentLineIndex = 0;
+
+     if (!voiceEnabled) return;
+      window.speechSynthesis.cancel(); // clear any ongoing speech
+      speakingQueue = [];
+
+      speakNextInQueue(); // Start reading from the first line
+    }
+
+    function speakNextInQueue() {
+    if (!voiceEnabled || isSpeaking || currentLineIndex >= lastLines.length)  return;
+
+    const line = lastLines[currentLineIndex];
+    const utterance = new SpeechSynthesisUtterance(line);
+    utterance.lang = "en-IN";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v =>   v.lang.includes("en")) || voices[0];
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onend = () => {
+    isSpeaking = false;
+    currentLineIndex++; // Move to next line
+    speakNextInQueue(); // Speak the next one
+    };
+
+    utterance.onerror = (e) => {
+    console.error("Speech error:", e.error);
+    isSpeaking = false;
+    currentLineIndex++;
+    speakNextInQueue();
+    };
+ 
+    isSpeaking = true;
+    window.speechSynthesis.speak(utterance);
+    }
+
+      function loadHistoryList() {
+      historyList.innerHTML = "";
+      const allChats = JSON.parse(localStorage.getItem("chatSessions")) || [];
+
+      allChats.forEach((session, index) => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+
+       const previewText = session.find(m => m.sender === "user")?.text || "Chat";
+       const startTime=session[0]?.time?new Date(session[0].time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):"";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = `Chat ${index + 1}(${startTime}):${previewText.slice(0, 20)}...`;
+        titleSpan.onclick = () => {
+          chatBox.innerHTML = "";
+          session.forEach(msg => addMessage(msg.sender, msg.text));
+          currentSession=[...session];
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "🗑";
+        deleteBtn.className = "delete-btn";
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteSession(index);
+        };
+
+        item.appendChild(titleSpan);
+        item.appendChild(deleteBtn);
+        historyList.appendChild(item);
+      });
+    }
+
+    function deleteSession(index) {
+      let allChats = JSON.parse(localStorage.getItem("chatSessions")) || [];
+      allChats.splice(index, 1);
+      localStorage.setItem("chatSessions", JSON.stringify(allChats));
+      loadHistoryList();
+    }
+
+    function saveCurrentSession() {
+      if (currentSession.length === 0) return;
+      let allChats = JSON.parse(localStorage.getItem("chatSessions")) || [];       allChats.push([...currentSession]);
+      localStorage.setItem("chatSessions", JSON.stringify(allChats)); 
+      currentSession=[];
+   }
+  
+    function scrollToBottom() {
+     chatBox.scrollTop = chatBox.scrollHeight;
+   }
+
+    function clearChat() {
+      // ✅ Save before clearing
+      saveCurrentSession();
+      currentSession=[];
+      chatBox.innerHTML = `
+        <div class="message bot-message">
+          Hi! I'm your college assistant. Ask me anything about admissions, courses, or campus life.
+          <small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+        </div>
+      `;
+     }
+
+   document.getElementById("deleteAllBtn").addEventListener("click", () => {
+   document.getElementById("confirmModal").style.display = "block";
+   });
+
+   document.getElementById("confirmYes").addEventListener("click", () =>      {
+      localStorage.removeItem("chatSessions");
+      loadHistoryList();
+   document.getElementById("confirmModal").style.display = "none";
+    });
+
+  document.getElementById("confirmNo").addEventListener("click", () => {
+    document.getElementById("confirmModal").style.display = "none";
+    });
+     
+    sendBtn.addEventListener("click", sendMessage);
+
+    window.addEventListener("beforeunload", saveCurrentSession);
+    document.getElementById("toggleTheme").addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+  const isDark = document.body.classList.contains("dark-mode");
+   document.getElementById("toggleTheme").textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+});
+    </script>
+  </body>
+</html>
